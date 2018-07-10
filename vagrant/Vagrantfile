@@ -1,0 +1,21 @@
+# https://gist.github.com/gnarf/b103e77f37236ca72d8e
+
+require "yaml"
+config_yml = YAML.load_file(File.open(File.expand_path(File.dirname(__FILE__)) + "/ansible-vagrant.yml"))
+
+Vagrant.configure(2) do |config|
+  config_yml["vagrant-virtual-machines"].each do |name, settings|
+    # use the config key as the vm identifier
+    config.vm.define(name) do |vm_config|
+      vm_config.vm.box = "ubuntu/xenial64"
+      vm_config.vm.synced_folder "../shared", "/shared"
+      vm_config.vm.network "private_network", ip: settings["ip"]
+      vm_config.vm.hostname = name
+      config.vm.provider "virtualbox" do |v|
+        v.name = name
+        v.customize ["modifyvm", :id, "--cpuexecutioncap", "50"]
+      end
+      vm_config.vm.provision "shell", path: "./provision.sh"
+    end
+  end
+end

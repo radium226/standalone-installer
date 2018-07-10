@@ -1,0 +1,11 @@
+vagrant-virtual-machines:
+  virtual-machine-01:
+    ip: "33.33.33.10"
+
+  virtual-machine-02:
+    ip: "33.33.33.11"
+
+ansible-groups:
+  gateway:
+  - virtual-machine-01
+  - virtual-machine-02

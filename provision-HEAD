@@ -1,0 +1,25 @@
+#!/bin/sh
+set -euo pipefail
+
+export SCRIPT_FILE_PATH="${0}"
+
+export FOLDER_PATH="/tmp/installer"
+
+decompress_archive()
+{
+  local skip
+  skip="$( awk '/^__ARCHIVE__/ { print NR + 1; exit 0; }' "${SCRIPT_FILE_PATH}" )"
+  mkdir -p "${FOLDER_PATH}"
+  tail -n +${skip} "${SCRIPT_FILE_PATH}" | base64 -d | tar -zpx -C "${FOLDER_PATH}"
+}
+
+main()
+{
+  decompress_archive
+  ${FOLDER_PATH}/scripts/provision "${@}"
+}
+
+main "${@}"
+exit ${?}
+
+__ARCHIVE__

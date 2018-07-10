@@ -1,0 +1,6 @@
+provision
+vendors/*
+vagrant/.vagrant
+archive.tar.gz
+archive.tar.gz.base64
+ansible/inventories/vagrant.ini

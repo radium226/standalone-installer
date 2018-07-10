@@ -1,0 +1,24 @@
+---
+# https://github.com/kubernetes/contrib/blob/master/ansible/roles/pre-ansible/tasks/coreos.yml
+# https://stackoverflow.com/questions/42121346/is-it-possible-to-copy-a-local-file-to-a-remove-server-without-using-the-copy-mo
+- hosts: all
+  gather_facts: no
+  tasks:
+  - name: create PyPy vendor folder
+    raw: >
+      mkdir -p "/tmp/installer/vendors/pypy"
+  - name: copy PyPy archive
+    local_action: command scp -o StrictHostKeyChecking=no -i "{{ ansible_ssh_private_key_file }}" -P "{{ ansible_ssh_port }}" "/tmp/installer/vendors/pypy/pypy3.5-6.0.0-linux_x86_64-portable.tar.bz2" "{{ ansible_ssh_user }}@{{ ansible_ssh_host }}:/tmp/installer/vendors/pypy/pypy3.5-6.0.0-linux_x86_64-portable.tar.bz2"
+  - name: extract PyPy
+    raw: >
+      tar -xf "/tmp/installer/vendors/pypy/pypy3.5-6.0.0-linux_x86_64-portable.tar.bz2" -C "/tmp/installer"
+  - name: create symbolic link for PyPy
+    raw: >
+      test -e "/tmp/installer/pypy" || ln -s "/tmp/installer/pypy3.5-6.0.0-linux_x86_64-portable" "/tmp/installer/pypy"
+
+- hosts: all
+  gather_facts: yes
+  tasks:
+  - name: check Ansible
+    debug:
+      msg: It works!
