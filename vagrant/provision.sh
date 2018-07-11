@@ -15,7 +15,10 @@ sudo apt-get -y purge \
   "python2.7-minimal"
 
 # https://stackoverflow.com/questions/714915/using-the-passwd-command-from-within-a-shell-script
-#echo " ==> Creating Personal User"
-#sudo useradd "${PERSONAL_USER}" \
-#  --create-home \
-#echo "${USER_PASSWORD}:${PERSONAL_PASSWORD}" | sudo chpasswd
+echo " ==> Creating Personal User"
+sudo useradd "${PERSONAL_USER}" \
+  --create-home || true
+echo "${PERSONAL_USER}:${PERSONAL_PASSWORD}" | sudo chpasswd
+
+echo " ==> Create Applicative User"
+sudo useradd "${APPLICATIVE_USER}" || true

@@ -1,0 +1,15 @@
+---
+- hosts: all
+  vars:
+    ansible_connection: ssh
+    ansible_host: "{{ vagrant_ssh_host }}"
+    ansible_port: "{{ vagrant_ssh_port }}"
+    ansible_user: "me"
+    ansible_ssh_pass: "p4ssw0rd"
+    ansible_ssh_extra_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+  tasks:
+  - command: id
+  - command: id
+    become: yes
+    become_method: su
+    become_user: "app"

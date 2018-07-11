@@ -3,6 +3,11 @@
 # https://stackoverflow.com/questions/42121346/is-it-possible-to-copy-a-local-file-to-a-remove-server-without-using-the-copy-mo
 - hosts: all
   gather_facts: no
+  vars:
+    ansible_ssh_host: "{{ vagrant_ssh_host }}"
+    ansible_ssh_port: "{{ vagrant_ssh_port }}"
+    ansible_ssh_user: "{{ vagrant_ssh_user }}"
+    ansible_ssh_private_key_file: "{{ vagrant_ssh_private_key_file }}"
   tasks:
   - name: create PyPy vendor folder
     raw: >
@@ -18,7 +23,33 @@
 
 - hosts: all
   gather_facts: yes
+  become: yes
+  vars:
+    ansible_ssh_host: "{{ vagrant_ssh_host }}"
+    ansible_ssh_port: "{{ vagrant_ssh_port }}"
+    ansible_ssh_user: "{{ vagrant_ssh_user }}"
+    ansible_ssh_private_key_file: "{{ vagrant_ssh_private_key_file }}"
   tasks:
   - name: check Ansible
     debug:
       msg: It works!
+  - copy:
+      content: |
+        #!/bin/sh
+        echo "IT ESCALATED QUICKLY !"
+        sudo su "${@}"
+      dest: "/usr/local/bin/escalate.sh"
+      mode: u=rwx,g=rx,o=rx
+  - lineinfile:
+      dest: "/etc/ssh/sshd_config"
+      regexp: "^PasswordAuthentication"
+      line: "PasswordAuthentication yes"
+      state: present
+  - systemd:
+      name: sshd
+      state: restarted
+  - copy:
+      content:
+        me ALL=(ALL) NOPASSWD:ALL
+      dest: /etc/sudoers.d/me
+      mode: u=r,g=r,o=r

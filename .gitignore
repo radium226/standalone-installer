@@ -1,4 +1,4 @@
-provision
+./provision
 vendors/*
 vagrant/.vagrant
 vagrant/*.log

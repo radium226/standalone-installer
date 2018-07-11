@@ -45,5 +45,5 @@ if __name__ == "__main__":
             ansible_ssh_user = host_ssh_config["user"]
             ansible_ssh_private_key_file = host_ssh_config["identityfile"][0]
             iface = "enp0s8"
-            print(f"{host_name} ansible_ssh_host={ansible_ssh_host} ansible_ssh_port={ansible_ssh_port} ansible_ssh_user={ansible_ssh_user} ansible_ssh_private_key_file={ansible_ssh_private_key_file} iface={iface} ansible_python_interpreter=/tmp/installer/pypy/bin/pypy")
+            print(f"{host_name} vagrant_ssh_host={ansible_ssh_host} vagrant_ssh_port={ansible_ssh_port} vagrant_ssh_user={ansible_ssh_user} vagrant_ssh_private_key_file={ansible_ssh_private_key_file} iface={iface} ansible_python_interpreter=/tmp/installer/pypy/bin/pypy")
         print()

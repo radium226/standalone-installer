@@ -53,7 +53,19 @@ ansible_playbook()
     source "${VIRTUALENV_FOLDER_PATH}/bin/activate"
 
     export ANSIBLE_CONFIG="${FOLDER_PATH}/ansible/ansible.cfg"
-    ansible-playbook -vvvv "${@}"
+    ansible-playbook "${@}"
+  )
+}
+
+ansible_playbook_escalate()
+{
+  (
+    set +u
+    export PATH="${FOLDER_PATH}/pypy/bin:${PATH}"
+    source "${VIRTUALENV_FOLDER_PATH}/bin/activate"
+
+    export ANSIBLE_CONFIG="${FOLDER_PATH}/ansible/ansible.cfg"
+    ANSIBLE_BECOME_EXE="escalate.sh" ansible-playbook "${@}"
   )
 }
 
@@ -120,6 +132,10 @@ main()
   done
 
   bootstrap --environment="${environment}"
+
+  ansible_playbook_escalate -vvvv \
+    --inventory "${ANSIBLE_FOLDER_PATH}/inventories/${environment}.ini" \
+    "${ANSIBLE_FOLDER_PATH}/id.yml"
 }
 
 main "${@}"
