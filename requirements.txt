@@ -1,1 +1,4 @@
 ansible
+idna
+setuptools
+wheel

@@ -1,69 +1,66 @@
-vagrant-box-update:
-	cd "./vagrant" ; \
-	vagrant box update
+BUILD_FOLDER_PATH = package-build
 
-vagrant-up:
-	cd "./vagrant" ; \
-	vagrant up --provision
+PYPY_VERSION = 3.5-7.0.0
+PYPY_URL = https://bitbucket.org/squeaky/portable-pypy/downloads/pypy$(PYPY_VERSION)-linux_x86_64-portable.tar.bz2
+PYPY_FOLDER_PATH = $(BUILD_FOLDER_PATH)/pypy
 
-vagrant-destroy:
-	cd "./vagrant" ; \
-	vagrant destroy --force
+$(BUILD_FOLDER_PATH):
+	mkdir -p "$(BUILD_FOLDER_PATH)"
 
-vagrant-ssh-virtual-machine-01:
-	cd "./vagrant" ; \
-	vagrant ssh "virtual-machine-01"
+$(BUILD_FOLDER_PATH)/vendors: $(BUILD_FOLDER_PATH)
+	mkdir -p "$(BUILD_FOLDER_PATH)/vendors"
 
-vagrant-ssh-virtual-machine-02:
-	cd "./vagrant" ; \
-	vagrant ssh "virtual-machine-02"
+$(BUILD_FOLDER_PATH)/vendors/pypy.tar.bz2: $(BUILD_FOLDER_PATH)/vendors
+	cd "$(BUILD_FOLDER_PATH)/vendors" ; \
+	test -f "./pypy.tar.bz2" || \
+	 	wget "$(PYPY_URL)" \
+			-O "./pypy.tar.bz2"
 
-download-pypy:
-	mkdir -p "./vendors/pypy" ; \
-	cd "./vendors/pypy" ; \
-	test -f "./pypy3.5-6.0.0-linux_x86_64-portable.tar.bz2" || \
-		wget "https://bitbucket.org/squeaky/portable-pypy/downloads/pypy3.5-6.0.0-linux_x86_64-portable.tar.bz2" \
-			-O "./pypy3.5-6.0.0-linux_x86_64-portable.tar.bz2"
+$(BUILD_FOLDER_PATH)/vendors/pypy: $(BUILD_FOLDER_PATH)/vendors/pypy.tar.bz2
+	cd "$(BUILD_FOLDER_PATH)/vendors" ; \
+	mkdir -p "./pypy" ; \
+	tar \
+		-C "./pypy" \
+		--strip-component=1 \
+		-xf "./pypy.tar.bz2"
 
-download-python-wheels:
-	cd "./vendors" ; \
-	test -d "./.python-wheels-virtualenv" || \
-		virtualenv "./.python-wheels-virtualenv" ; \
-	source "./.python-wheels-virtualenv/bin/activate" ; \
-	mkdir -p "./python-wheels" ; \
-	cd "./python-wheels" ; \
-	pip download -r "../../requirements.txt"
+$(BUILD_FOLDER_PATH)/virtualenv: $(BUILD_FOLDER_PATH)/vendors/pypy
+	cd "$(BUILD_FOLDER_PATH)" ; \
+	./vendors/pypy/bin/virtualenv-pypy "./virtualenv"
 
-download-python-sources:
-	mkdir -p "./vendors/python-sources" ; \
-	cd "./vendors/python-sources" ; \
-	test -f "./cryptography-2.2.2.tar.gz" || wget "https://files.pythonhosted.org/packages/ec/b2/faa78c1ab928d2b2c634c8b41ff1181f0abdd9adf9193211bd606ffa57e2/cryptography-2.2.2.tar.gz" -O "./cryptography-2.2.2.tar.gz" ; \
-	test -f "./bcrypt-3.1.4.tar.gz" || wget "https://files.pythonhosted.org/packages/f3/ec/bb6b384b5134fd881b91b6aa3a88ccddaad0103857760711a5ab8c799358/bcrypt-3.1.4.tar.gz" -O "./bcrypt-3.1.4.tar.gz" ; \
-	test -f "./PyNaCl-1.2.1.tar.gz" || wget "https://files.pythonhosted.org/packages/08/19/cf56e60efd122fa6d2228118a9b345455b13ffe16a14be81d025b03b261f/PyNaCl-1.2.1.tar.gz" -O "./PyNaCl-1.2.1.tar.gz"
+$(BUILD_FOLDER_PATH)/vendors/wheels: $(BUILD_FOLDER_PATH)/virtualenv
+	cd "$(BUILD_FOLDER_PATH)" ; \
+	mkdir "./vendors/wheels" ; \
+	source "./virtualenv/bin/activate" ; \
+	cd "./vendors/wheels" ; \
+	pip download \
+		-r "../../../requirements.txt"
 
+$(BUILD_FOLDER_PATH)/ansible: $(BUILD_FOLDER_PATH)
+	cp -r "./ansible" "$(BUILD_FOLDER_PATH)/ansible"
 
-download-vendors: download-pypy download-python-wheels download-python-sources
+$(BUILD_FOLDER_PATH)/provision-HEAD: $(BUILD_FOLDER_PATH)
+	cp -r "./provision-HEAD" "$(BUILD_FOLDER_PATH)/provision-HEAD"
 
-create-archive: download-vendors
+$(BUILD_FOLDER_PATH)/archive.tar.gz: $(BUILD_FOLDER_PATH)/ansible $(BUILD_FOLDER_PATH)/vendors/wheels $(BUILD_FOLDER_PATH)/vendors/pypy
+	cd "$(BUILD_FOLDER_PATH)" ; \
 	tar -czf "./archive.tar.gz" \
-		"./scripts" \
 		"./ansible" \
 		"./vendors/pypy" \
-		"./vendors/python-sources" \
-		"./vendors/python-wheels"
+		"./vendors/wheels"
 
-embbed-archive: create-archive
-	cat "./archive.tar.gz" | base64 >"./archive.tar.gz.base64" ; \
+$(BUILD_FOLDER_PATH)/archive.tar.gz.base64: $(BUILD_FOLDER_PATH)/archive.tar.gz
+	cd "$(BUILD_FOLDER_PATH)" ; \
+	cat "./archive.tar.gz" | base64 >"./archive.tar.gz.base64"
+
+$(BUILD_FOLDER_PATH)/provision: $(BUILD_FOLDER_PATH)/provision-HEAD $(BUILD_FOLDER_PATH)/archive.tar.gz.base64
+	cd "$(BUILD_FOLDER_PATH)" ; \
 	cat "./provision-HEAD" "./archive.tar.gz.base64" >"./provision" ; \
 	chmod +x "./provision"
 
-package: embbed-archive
+.PHONY: package
+package: $(BUILD_FOLDER_PATH)/provision
 
-generate-vagrant-inventory: vagrant-up
-	mkdir -p "./ansible/inventories" ; \
-	cd "./ansible/inventories" ; \
-	"../../vagrant/ansible-inventory.py" >"./vagrant.ini"
-
-# sudo -E unshare -n sudo -E -u ${USER}
-test: generate-vagrant-inventory package
-	./provision --environment="vagrant"
+.PHONY: clean
+clean:
+	rm -Rf "$(BUILD_FOLDER_PATH)"

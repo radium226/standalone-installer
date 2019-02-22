@@ -6,3 +6,4 @@ archive.tar.gz
 archive.tar.gz.base64
 ansible/inventories/vagrant.ini
 install.sh-BAK
+package-build/

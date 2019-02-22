@@ -1,9 +1,13 @@
-#!/bin/sh
+#!/bin/bash
 set -euo pipefail
 
 export SCRIPT_FILE_PATH="${0}"
 
 export FOLDER_PATH="/tmp/installer"
+
+export ANSIBLE_FOLDER_PATH=${FOLDER_PATH}/ansible
+export VIRTUALENV_FOLDER_PATH="${FOLDER_PATH}/virtualenv"
+export WHEELS_FOLDER_PATH="${FOLDER_PATH}/vendors/wheels"
 
 decompress_archive()
 {
@@ -13,10 +17,44 @@ decompress_archive()
   tail -n +${skip} "${SCRIPT_FILE_PATH}" | base64 -d | tar -zpx -C "${FOLDER_PATH}"
 }
 
+install_ansible()
+{
+  (
+    set +u
+    # Setup the virtual environment
+    export PATH="${FOLDER_PATH}/vendors/pypy/bin:${PATH}"
+    test -d "${VIRTUALENV_FOLDER_PATH}" || virtualenv-pypy "${VIRTUALENV_FOLDER_PATH}"
+    source "${VIRTUALENV_FOLDER_PATH}/bin/activate"
+
+    declare archive_file_path=
+    find "${WHEELS_FOLDER_PATH}" -name "*.tar.gz" -o -name "*.whl" | while read archive_file_path; do
+      pip install --no-index --find-links="${WHEELS_FOLDER_PATH}" "${archive_file_path}" --no-dependencies
+    done
+
+    ansible --version
+  )
+}
+
 main()
 {
   decompress_archive
-  ${FOLDER_PATH}/scripts/provision "${@}"
+  install_ansible
+
+  (
+    set +u
+    # Setup the virtual environment
+    export PATH="${FOLDER_PATH}/vendors/pypy/bin:${PATH}"
+    source "${VIRTUALENV_FOLDER_PATH}/bin/activate"
+
+    cd "${FOLDER_PATH}/ansible"
+
+    ANSIBLE_CONFIG="./ansible.cfg" \
+      ansible-playbook \
+        -i "inventories/${1}.ini" \
+        "playbooks/provison.yml"
+        -l "$( hostname )" \
+        -e "ansible_connection=local"
+  )
 }
 
 main "${@}"
