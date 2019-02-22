@@ -50,8 +50,9 @@ main()
 
     ANSIBLE_CONFIG="./ansible.cfg" \
       ansible-playbook \
+        -vv \
         -i "inventories/${1}.ini" \
-        "playbooks/provison.yml"
+        "playbooks/provision.yml" \
         -l "$( hostname )" \
         -e "ansible_connection=local"
   )
