@@ -1,0 +1,3 @@
+FOR_ROOT=false
+DEST_FILE_PATH="/toto"
+TEMPLATE=false

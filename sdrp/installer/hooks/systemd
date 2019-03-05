@@ -1,0 +1,5 @@
+FOR_ROOT=false
+ON_END()
+{
+  echo "Redémarre systemd, enculé"
+}

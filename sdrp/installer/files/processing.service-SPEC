@@ -1,0 +1,3 @@
+FOR_ROOT=true
+TEMPLATE=true
+TARGET_FILE_PATH="./${OWNER}/test"
